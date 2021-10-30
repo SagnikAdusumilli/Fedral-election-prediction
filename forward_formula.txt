@@ -1,0 +1,4 @@
+vote_liberal ~ q14 + q52 + q33 + q37 + q16 + q21 + q34 + q46 + 
+    q48 + q18r + q14r + q16r + q66a_12 + q10 + weight_CES + interviewer_gender_CES + 
+    q40 + q21r + q49 + q19 + q20 + q3 + interviewer_id_CES + 
+    num_attempts_CES + q47 + q66a_3 + q45 + q44 + q24r + age
