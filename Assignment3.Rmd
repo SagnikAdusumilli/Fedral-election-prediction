@@ -11,6 +11,13 @@ output:
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 library(openintro)
 library(tidyverse)
+library(dplyr)
+# should run the lines below if you don't have cesR package installed
+# install.packages("devtools")
+# devtools::install_github("hodgettsp/cesR")
+library(cesR)
+library(caret)
+library(Hmisc)
 ```
 
 
@@ -28,77 +35,176 @@ library(tidyverse)
 
 ## Data
 
-<Type here a paragraph introducing the data, its context and as much info about the data collection process that you know.>
+### Data Collection Process
+The Data is a collection of two datasets. The first dataset contains data from the General Social Survey on Family (cycle 31) on 2017. Canada's General Social Survey (GSS) program conducts annual survey covering one topic in depth (ciation). As such, this dataset contains mostly contains information pertaining to families. However, we will later investigate some common variables between this dataset and the Canada Election Study (CES) dataset. This will give us a list of factors in the general population that could be potentially associated to political affiliations
 
+the Canada Election Study (CES) data which was collected in 2019. This data was collected from a questionnaire delivered to the people living in Canada through the Computer Assisted Telephone Interviewing(CATI). Phone calls were made potential interviewees during both the day and evening for every weekday. These questions asked some personal information such as their age and also political opinions such as "what is your opinion on Justin Trudeau?" (citation)
 
 ```{r, include = FALSE}
-
-# Here you can load in and clean the census data (you may need to do the cleaning in a separate R script). 
-
-census_data <- read_csv("gss_clean.csv")
-
-# You may need additional chunks, in case you want to include some of the cleaning output.
+# loading the data
+gss_data <- read.csv('./gss_clean.csv')
+get_ces("ces2019_phone") # we are getting 2019 phone survey data
+# no warning from this line #4021 obs of 278 variables.
+# coverts categorical variable factors acutomatically 
+survey_data <- labelled::to_factor(ces2019_phone) 
 
 ```
 
+### Data cleaning 
+```{r, include = FALSE}
 
+# find common topics between both the datasets
+ces_labelNames <- label(survey_data)
+gss_colNames <- colnames(gss_data)
+
+ces_strings <- str_split(ces_labelNames, ' ')
+gss_strings <- str_split(gss_colNames, '_')
+
+# get common words for each col
+common_words <- intersect(unlist(gss_strings), unlist(ces_strings))
+common_words <- c(common_words, c("age"))
+
+# which labels contain the important words. look at the dictionary
+ces_label_dict <- data.frame(colName = colnames(survey_data), labelName = label(survey_data))
+
+survey_data_clean <- survey_data
+sum(is.na(survey_data$age))
+
+#gender cleaning
+survey_data_clean <- survey_data %>% 
+  filter(q3 == '(1) Male' | q3 == '(2) Female') %>%
+  mutate(gender = if_else(q3 == '(1) Male', 'Male', 'Female')) %>%
+  dplyr::rename(sex = q3)
+
+#q4 province
+survey_data_clean <- survey_data_clean %>% dplyr::rename(province = q4)
+sum(is.na(survey_data_clean$province))
+
+#q63 religion_imporatance
+survey_data_clean$q63 <- str_sub(survey_data_clean$q63, 5)
+survey_data_clean <- survey_data_clean %>%
+  dplyr::rename(religion_importance = q63) %>%
+  filter(!is.na(religion_importance) & religion_importance != " Refused") %>%
+  mutate(religion_importance = trimws(religion_importance, 'l'))
+
+gss_data <- gss_data %>% 
+  dplyr::rename(religion_importance = regilion_importance) %>%
+  filter(!is.na(religion_importance))
+
+
+sum(is.na(survey_data_clean$q65)) #2166 out of 2576 NA, we will not use this variable
+nrow(survey_data_clean)
+
+#aboriginal
+survey_data_clean <- survey_data_clean %>%
+  dplyr::rename(aboriginal = q66a_15) %>%
+  filter(aboriginal == '(1) Selected' | aboriginal == '(0) Not Selected') %>%
+  mutate(aboriginal = if_else(aboriginal == '(1) Selected', 'Yes', 'No'))
+#there are few data points saying "Don't know", so it was not worth recording
+
+gss_data <- gss_data %>% filter(aboriginal == 'Yes' | aboriginal == 'No')
+
+#employment status 91% of this is NA, other col main_activity 
+#is also NA without clean-up at the gss_cleaning.R this info is not usable
+
+#occupation there are no common occupation that has a string match skip for now
+
+#education level 
+survey_data_clean <- survey_data_clean %>%
+  dplyr::rename(education = q61)
+
+survey_data_clean <- survey_data_clean %>%
+  filter(education != "(-8) Refused" & education != "(-9) Don't know") %>%
+  mutate(education = case_when(
+    education == "(9) Bachelor's degree" ~ "Bachelor",
+    education == "(10) Master's degree" ~ "Above Bachelor",
+    education == "(11) Professional degree or doctorate" ~ "Above Bachelor",
+    TRUE ~ "Below Bachelor"
+  ))
+
+# map each category from gss to a category
+# "High school diploma or a high school equivalency certificate" "Trade certificate or diploma"                                
+# "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)"                  "College, CEGEP or other non-university certificate or di..." 
+# "Less than high school diploma or its equivalent"              "University certificate or diploma below the bachelor's level"
+# "University certificate, diploma or degree above the bach..."
+
+gss_data <- gss_data %>%
+  filter(!is.na(education)) %>%
+  mutate(education = case_when(
+    education == "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)" ~ "Bachelor",
+    education == "University certificate, diploma or degree above the bach.." ~ "Above Bachelor",
+    TRUE ~ "Below Bachelor",
+  ))
+
+#hh_size
+survey_data_clean$q71<- as.numeric(as.character(survey_data_clean$q71))
+survey_data_clean <- survey_data_clean %>%
+  filter(!is.na(q71)) %>%
+  dplyr::rename(hh_size = q71)
+
+common_cols <- intersect(colnames(survey_data_clean), colnames(gss_data))
+
+gss_common_data <- gss_data[, common_cols]
+survey_common_data <- survey_data_clean[, common_cols]
+
+# add vote variable for survey_data
+survey_common_data$vote <- survey_data_clean$vote
+survey_common_data <- survey_common_data %>%
+  mutate(vote = case_when(
+    vote == "(1) Liberal (Grits)" ~ 'Liberal',
+    vote == "(3) NDP (New Democratic Party, New Democrats, NDPers)" ~ 'NDP',
+    vote == "(2) Conservatives (Tory, PCs, Conservative Party of Canada)" ~ 'Conservatives',
+    vote == "(5) Green Party (Greens)" ~ 'Greens',
+    vote == "(6) People's Party" ~ "People's Party",
+    vote == "(4) Bloc Québécois (BQ, PQ, Bloc, Parti Québécois)" ~ "Bloc Quebecois",
+  ))
+
+survey_common_data <- na.omit(survey_common_data)
+  
+write_csv(gss_common_data, "gss_common_data.csv")
+write_csv(survey_common_data, "survey_common_data.csv")
+```
 <Type here a summary of the cleaning process (**only add in stuff beyond my original gss_cleaning.R code**). You only need to describe additional cleaning that you and your group did.> ]
 
-<Here is a resource for grabbing the CES2019 data: [https://awstringer1.github.io/sta238-book/section-short-tutorial-on-pulling-data-for-assignment-1.html#section-canadian-election-study](https://awstringer1.github.io/sta238-book/section-short-tutorial-on-pulling-data-for-assignment-1.html#section-canadian-election-study)>
+<Remember, you may want to use multiple datasets here, if you do end up using multiple data sets, or merging the data, be sure to describe this in the cleaning process and be sure to discuss important aspects of all the data that you used.>
 
-```{r, include = FALSE}
+The regression model will be constructed, will be applied to both datasets, therefore only variables that appeared in both the datasets could be used. One way was examine if there were common terms present in the columns for both the dataset. Unfortunately most the columns the CES dataset were just question numbers. However, each column also had a label that stated the question itself. For example column "q2" had the label "IN what year were you born?". Hence we collected common words that appeared in the columns of the GSS data and the labels of the CES data to find possible topics that were common in both datasets. 
 
-# Here you can load in and clean the survey data (you may need to do the cleaning in a separate R script). 
-# First, if you don't already have it, install the devtools package:
-# install.packages("devtools")
+Then for each topic we search the columns for both the dataset to see if any two column were describing indentical or similar variables. These are the variables we found:
 
-# Now use devtools to install the cesR package directly from Github:
-# devtools::install_github("hodgettsp/cesR")
+* Age of the person was recorded in both data with the same column names
+* Gender was recorded in CES data as q3 and sex was recorded in the GSS data. Here we assumed the people who reported their gender to be male or female also would have the same sex as their gender. Hence we removed all genders that were not male or female and renamed the q3 column in the CES data to sex
+* Both the datasets recorded the province a person lived in. To make the variable name clear, q4 in CES dataset was renamed to province
+* Both datasets recorded how the level of importance for religion. This was column q63 in the CES data. The categorical values in both the datasets were the same with the exception of an additional value "Refused" being present in the CES data. We removed rows containing this value from the CES data and renames columns q63 to "religion_importance" to have the same column names in both datasets. Furthermore, we also removed missing rows with missing values in this column for both the datasets
+* Both datasets recorded if a person was aboriginal or not. This was an option for question 66a in CES data which asked which ethnicity the person belonged to. q66a_15 recorded if the person belonged to an Aboriginal group. the value "(1) Selected" indicated the person identified as original and "(0) Not Selected". We filtered out other values as the indicated that the question was skipped or if the person was not sure. Then we mutated "(1) Selected" to "Yes" and "(0) Not Selected" to "No" to match the values of the variable in both dataset. We also renamed q66a_15 to aboriginal to match the variable name as well.
+Both datasets had values "Don't know" to indicate that a person was not sure. However, there very few rows with this value so we removed these rows
+* Education Level
 
-# Load it like any other package:
-#library(cesR)
+* Household size
 
-# There are many different CES datasets, and they have unique codes. 
-# See them with the get_cescodes() function:
-
-#get_cescodes()
-
-# Now pick one, let's try ces2019_phone
-
-#get_ces("ces2019_phone")
-
-#survey_data <- ces2019_phone
-
-
-
-# Alternative to what is in the comments above, I have locally loaded
-# and (mildly) cleaned the CES2019 phone data and have included it in here.
-# We can load it in:
-survey_data <- read_csv("ces2019-phone_clean.csv")
-
-```
-
+* Vote variable
 
 ```{r, include = FALSE}
 
 #### You will need to update/clean the code below based off the variables you want to use in your poststratification.
 
-survey_data <- 
-  survey_data %>% 
-  mutate(age = 2019-q2,
-         vote_liberal = ifelse(q11==1, 1, 0)) %>%
-  select(age, vote_liberal)
-
-census_data <- census_data %>% 
-  mutate(age=round(age)) %>% 
-  select(age)
+# survey_data <- 
+#   survey_data %>% 
+#   mutate(age = 2019-q2,
+#          vote_liberal = ifelse(q11==1, 1, 0)) %>%
+#   select(age, vote_liberal)
+# 
+# census_data <- census_data %>% 
+#   mutate(age=round(age)) %>% 
+#   select(age)
 
 ```
 
+<Include a description of the important variables.>
+```{r, include=FALSE}
+# make a table that contains the description for the 
+```
 
-<Remember, you may want to use multiple datasets here, if you do end up using multiple data sets, or merging the data, be sure to describe this in the cleaning process and be sure to discuss important aspects of all the data that you used.>
-
-<Include a description of the important variables.> 
 
 ```{r, include=FALSE}
 
@@ -135,7 +241,7 @@ $$ y = \beta_0+\beta_1  x_{age} + \epsilon$$
 ```{r, include=FALSE}
 
 # Creating the Model
-model <- lm(vote_liberal ~ age, data=survey_data)
+# model <- lm(vote_liberal ~ age, data=survey_data)
 
 # Model Results (to Report in Results section)
 # summary(model)
@@ -169,7 +275,7 @@ All analysis for this report was programmed using `R version 4.0.2`.
 ```{r, include=FALSE}
 
 # Creating the Model
-model <- glm(vote_liberal ~ age, data=survey_data, family="binomial")
+# model <- glm(vote_liberal ~ age, data=survey_data, family="binomial")
 
 # Model Results (to Report in Results section)
 # summary(model)
@@ -180,17 +286,17 @@ model <- glm(vote_liberal ~ age, data=survey_data, family="binomial")
 ```{r, include=FALSE}
 
 # Here I will perform the post-stratification calculation
-census_data_counts <- census_data %>% 
-  group_by(age) %>% 
-  summarise(n=n())
-
-census_data_counts$estimate <-
-  model %>%
-  predict(newdata = census_data_counts)
-
-census_data_counts %>% 
-  mutate(liberal_predict_prop = estimate*n) %>%
-  summarise(liberal_predict = sum(liberal_predict_prop)/sum(n))
+# census_data_counts <- census_data %>% 
+#   group_by(age) %>% 
+#   summarise(n=n())
+# 
+# census_data_counts$estimate <-
+#   model %>%
+#   predict(newdata = census_data_counts)
+# 
+# census_data_counts %>% 
+#   mutate(liberal_predict_prop = estimate*n) %>%
+#   summarise(liberal_predict = sum(liberal_predict_prop)/sum(n))
 
 ```
 
