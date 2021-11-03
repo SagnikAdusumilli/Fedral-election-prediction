@@ -108,7 +108,7 @@ survey_data_clean <- survey_data_clean %>%
 
 survey_data_clean <- survey_data_clean %>%
   filter(education != "(-8) Refused" & education != "(-9) Don't know") %>%
-  mutate(eduation = case_when(
+  mutate(education = case_when(
     education == "(9) Bachelor's degree" ~ "Bachelor",
     education == "(10) Master's degree" ~ "Above Bachelor",
     education == "(11) Professional degree or doctorate" ~ "Above Bachelor",
@@ -141,14 +141,18 @@ gss_common_data <- gss_data[, common_cols]
 survey_common_data <- survey_data_clean[, common_cols]
 
 # add vote variable for survey_data
-survey_common_data$vote <- survey_data$vote %>%
-  filter(vote = case_when(
+survey_common_data$vote <- survey_data_clean$vote
+survey_common_data <- survey_common_data %>%
+  mutate(vote = case_when(
     vote == "(1) Liberal (Grits)" ~ 'Liberal',
     vote == "(3) NDP (New Democratic Party, New Democrats, NDPers)" ~ 'NDP',
-    vote == "Conservatives (Tory, PCs, Conservative Party of Canada)" ~ 'Conservatives',
+    vote == "(2) Conservatives (Tory, PCs, Conservative Party of Canada)" ~ 'Conservatives',
     vote == "(5) Green Party (Greens)" ~ 'Greens',
     vote == "(6) People's Party" ~ "People's Party",
+    vote == "(4) Bloc Québécois (BQ, PQ, Bloc, Parti Québécois)" ~ "Bloc Quebecois",
   ))
+
+survey_common_data <- na.omit(survey_common_data)
   
 write_csv(gss_common_data, "gss_common_data.csv")
 write_csv(survey_common_data, "survey_common_data.csv")
