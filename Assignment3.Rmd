@@ -13,8 +13,8 @@ library(openintro)
 library(tidyverse)
 library(dplyr)
 # should run the lines below if you don't have cesR package installed
-# install.packages("devtools")
-# devtools::install_github("hodgettsp/cesR")
+#install.packages("devtools")
+#devtools::install_github("hodgettsp/cesR")
 library(cesR)
 library(caret)
 library(Hmisc)
@@ -25,22 +25,27 @@ library(labelled)
 ```
 
 
+```{r}
+install.packages("devtools")
+devtools::install_github("hodgettsp/cesR")
+```
+
 
 ## Introduction
 
-<Here you should have a few paragraphs of text introducing the problem, getting the reader interested/ready for the rest of the report.>
+The Canadian Election Study is an annual survey of voting and other preferences and demographics which are thought to pertain to political behavior of Canadian voters.This survey is used to predict the overall popular vote of the next Canadian federal election (tentatively 2025) using a regression model with post-stratification.
 
-<Introduce terminology.>
+Some of the important terminologies is the Majority government, which is the party that won the most number of votes and were elected to become the ruling government. Next, is the Minority party, it's the party with the least votes and they are elected to become the opposition to the majority party. Also, some of the parties mentioned below are Bloc Quebecois, Conservatives, Greens, Liberal, NDP, and People’s Party.
 
-<Highlight hypotheses.>
+The research question we would be investigating is that does age, religion and location enough to predict the number of votes for each party?
 
-<Optional: You can also include a description of each section of this report as a last paragraph.>
+In this paper we will use post-stratification and multilevel regression to investigate if certain features of the population population such as: age, religion and location can be used to predict how many votes each party gets in a federal election
 
 
 ## Data
 
 ### Data Collection Process
-The Data is a collection of two datasets. The first dataset contains data from the General Social Survey on Family (cycle 31) on 2017. Canada's General Social Survey (GSS) program conducts annual survey covering one topic in depth (ciation). As such, this dataset contains mostly contains information pertaining to families. However, we will later investigate some common variables between this dataset and the Canada Election Study (CES) dataset. This will give us a list of factors in the general population that could be potentially associated to political affiliations
+The Data is a collection of two datasets. The first dataset contains data from the General Social Survey on Family (cycle 31) on 2017. Canada's General Social Survey (GSS) program conducts annual survey covering one topic in depth (citation). As such, this dataset contains mostly contains information pertaining to families. However, we will later investigate some common variables between this dataset and the Canada Election Study (CES) dataset. This will give us a list of factors in the general population that could be potentially associated to political affiliations
 
 the Canada Election Study (CES) data which was collected in 2019. This data was collected from a questionnaire delivered to the people living in Canada through the Computer Assisted Telephone Interviewing(CATI). Phone calls were made potential interviewees during both the day and evening for every weekday. These questions asked some personal information such as their age and also political opinions such as "what is your opinion on Justin Trudeau?" (citation)
 
