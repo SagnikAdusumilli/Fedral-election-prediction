@@ -20,6 +20,8 @@ library(caret)
 library(Hmisc)
 library(knitr)
 library(magrittr)
+library(expss)
+library(labelled)
 ```
 
 
@@ -52,7 +54,7 @@ survey_data <- labelled::to_factor(ces2019_phone)
 
 ```
 
-### Data cleaning 
+### Data cleaning
 ```{r, include = FALSE}
 
 # find common topics between both the datasets
@@ -89,7 +91,7 @@ survey_data_clean <- survey_data_clean %>%
   filter(!is.na(religion_importance) & religion_importance != " Refused") %>%
   mutate(religion_importance = trimws(religion_importance, 'l'))
 
-gss_data <- gss_data %>% 
+gss_data_clean <- gss_data %>% 
   dplyr::rename(religion_importance = regilion_importance) %>%
   filter(!is.na(religion_importance))
 
@@ -104,7 +106,7 @@ survey_data_clean <- survey_data_clean %>%
   mutate(aboriginal = if_else(aboriginal == '(1) Selected', 'Yes', 'No'))
 #there are few data points saying "Don't know", so it was not worth recording
 
-gss_data <- gss_data %>% filter(aboriginal == 'Yes' | aboriginal == 'No')
+gss_data_clean <- gss_data_clean %>% filter(aboriginal == 'Yes' | aboriginal == 'No')
 
 #employment status 91% of this is NA, other col main_activity 
 #is also NA without clean-up at the gss_cleaning.R this info is not usable
@@ -130,11 +132,11 @@ survey_data_clean <- survey_data_clean %>%
 # "Less than high school diploma or its equivalent"              "University certificate or diploma below the bachelor's level"
 # "University certificate, diploma or degree above the bach..."
 
-gss_data <- gss_data %>%
+gss_data_clean <- gss_data_clean %>%
   filter(!is.na(education)) %>%
   mutate(education = case_when(
     education == "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)" ~ "Bachelor",
-    education == "University certificate, diploma or degree above the bach.." ~ "Above Bachelor",
+    education == "University certificate, diploma or degree above the bach..." ~ "Above Bachelor",
     TRUE ~ "Below Bachelor",
   ))
 
@@ -144,9 +146,9 @@ survey_data_clean <- survey_data_clean %>%
   filter(!is.na(q71)) %>%
   dplyr::rename(hh_size = q71)
 
-common_cols <- intersect(colnames(survey_data_clean), colnames(gss_data))
+common_cols <- intersect(colnames(survey_data_clean), colnames(gss_data_clean))
 
-gss_common_data <- gss_data[, common_cols]
+gss_common_data <- gss_data_clean[, common_cols]
 survey_common_data <- survey_data_clean[, common_cols]
 
 # add vote variable for survey_data
@@ -187,8 +189,6 @@ Then for each topic we search the columns for both the dataset to see if any two
 
 After finding the common variables, we removed rows with missing values in these columns for both the datasets. Then we renamed the columns of the CES data to match the names of the columns of the GSS data. This was done so that models constructed on the CES data could also be used on the GSS data for post-stratification. Then we took the common variables and constructed two datasets. One dataset containing the rows from the CES data and the other dataset containing the rows of the GSS data. Futhermore, in the first dataset, voting data was added to the CES variables. This is the outcome of interest
 
-
-<Include a description of the important variables.>
 ```{r, echo=FALSE}
 var_names <- colnames(survey_common_data)
 
@@ -204,26 +204,55 @@ var_description <- c(
 )
 
 description_table <- data.frame(var_names, var_description)
-kable(description_table, col.names = c('Variable Name', 'Description'), coption = 'Variable description table', padding = 20)
+kable(description_table, col.names = c('Variable Name', 'Description'), caption = 'Variable description table', padding = 20)
 ```
 
-
-```{r, include=FALSE}
-
-# Use this to calculate some summary measures. 
-
-```
+\newpage
+### Numerical Summaries 
 
 
-<Include a description of the numerical summaries. Remember you can use `r ` to use inline R code.>
-
-```{r, echo = TRUE}
+```{r, echo = FALSE}
 
 # Use this to create some plots. Should probably describe both the sample and population.
-
+survey_common_data <- remove_labels(survey_common_data)
+survey_common_data <- droplevels(survey_common_data)
+survey_common_data %>% 
+  tab_cells("**Sex**" = sex, 
+            "**Province**" = province, 
+            "**Education**" = education,
+            "**Religion Importance**" = religion_importance,
+            "**Aboriginal**" = aboriginal,
+            "**vote**" = vote
+            ) %>% 
+    tab_cols(total(label = "Count")) %>% 
+    tab_stat_cases(total_row_position = "none") %>% 
+    tab_pivot() %>% 
+    split_columns() %>%
+    kable(caption = "Frequency for each category in the CES data")
+```
+From the above table we can gain the following insights on the survey data:
+* There seems to slightly more males and females in this dataset
+* Most of the people in the survey have an education level below a bachelor's degree
+* Most of the people in give a lot of importance or at least some importance to their religion
+* The large majority of the people in the survey are not Aboriginal. This perhaps suggests that this variable might not be of use for the model
+* It seems that the most popular party was the Conservative party followed closely by the Liberal party in 2019
+* There does not seem to be an significant difference in the number of awswered the survey for each province. This indicates that this survey represents the data of each province fairly well. 
+\newpage
+```{r, echo = FALSE}
+gss_common_data %>% 
+  tab_cells("**Sex**" = sex, 
+            "**Province**" = province, 
+            "**Education**" = education,
+            "**Religion Importance**" = religion_importance,
+            "**Aboriginal**" = aboriginal
+            ) %>% 
+    tab_cols(total(label = "Count")) %>% 
+    tab_stat_cases(total_row_position = "none") %>% 
+    tab_pivot() %>% 
+    split_columns() %>%
+    kable(caption = "Frequency for each category in the GSS data")
 ```
 
-<Include a clear description of the plot(s). I would recommend one paragraph for each plot.> 
 
 
 ## Methods
