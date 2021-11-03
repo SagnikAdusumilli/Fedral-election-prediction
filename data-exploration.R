@@ -77,7 +77,7 @@ which(sapply(survey_data_clean, function(col) length(unique(col))) == 1)
 numeric_cols <- select_if(survey_data_clean, is.numeric) #18 variables
 survey_data.pca <- prcomp(numeric_cols, center = TRUE, scale. = TRUE)
 summary(survey_data.pca) 
-# the top two only explain 26% and 12 percent of the variance. this means that numerical values are not that important? 
+# the top two only explain 26% and 12 percent of the variance. this means that numerical values are not that important?
 
 
 
