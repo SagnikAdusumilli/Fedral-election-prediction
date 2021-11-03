@@ -18,6 +18,8 @@ library(dplyr)
 library(cesR)
 library(caret)
 library(Hmisc)
+library(knitr)
+library(magrittr)
 ```
 
 
@@ -164,45 +166,45 @@ survey_common_data <- na.omit(survey_common_data)
 write_csv(gss_common_data, "gss_common_data.csv")
 write_csv(survey_common_data, "survey_common_data.csv")
 ```
-<Type here a summary of the cleaning process (**only add in stuff beyond my original gss_cleaning.R code**). You only need to describe additional cleaning that you and your group did.> ]
-
-<Remember, you may want to use multiple datasets here, if you do end up using multiple data sets, or merging the data, be sure to describe this in the cleaning process and be sure to discuss important aspects of all the data that you used.>
 
 The regression model will be constructed, will be applied to both datasets, therefore only variables that appeared in both the datasets could be used. One way was examine if there were common terms present in the columns for both the dataset. Unfortunately most the columns the CES dataset were just question numbers. However, each column also had a label that stated the question itself. For example column "q2" had the label "IN what year were you born?". Hence we collected common words that appeared in the columns of the GSS data and the labels of the CES data to find possible topics that were common in both datasets. 
 
 Then for each topic we search the columns for both the dataset to see if any two column were describing indentical or similar variables. These are the variables we found:
 
-* Age of the person was recorded in both data with the same column names
-* Gender was recorded in CES data as q3 and sex was recorded in the GSS data. Here we assumed the people who reported their gender to be male or female also would have the same sex as their gender. Hence we removed all genders that were not male or female and renamed the q3 column in the CES data to sex
-* Both the datasets recorded the province a person lived in. To make the variable name clear, q4 in CES dataset was renamed to province
-* Both datasets recorded how the level of importance for religion. This was column q63 in the CES data. The categorical values in both the datasets were the same with the exception of an additional value "Refused" being present in the CES data. We removed rows containing this value from the CES data and renames columns q63 to "religion_importance" to have the same column names in both datasets. Furthermore, we also removed missing rows with missing values in this column for both the datasets
-* Both datasets recorded if a person was aboriginal or not. This was an option for question 66a in CES data which asked which ethnicity the person belonged to. q66a_15 recorded if the person belonged to an Aboriginal group. the value "(1) Selected" indicated the person identified as original and "(0) Not Selected". We filtered out other values as the indicated that the question was skipped or if the person was not sure. Then we mutated "(1) Selected" to "Yes" and "(0) Not Selected" to "No" to match the values of the variable in both dataset. We also renamed q66a_15 to aboriginal to match the variable name as well.
-Both datasets had values "Don't know" to indicate that a person was not sure. However, there very few rows with this value so we removed these rows
-* Education Level
+* Age: The age of the person was recorded in both data with the same column names.
 
-* Household size
+* Sex: Gender was recorded in CES data and sex was recorded in the GSS data. Here we assumed the people who reported their gender to be male or female also would have the same sex as their gender. Hence we removed all genders that were not male or female and renamed the q3 column in the CES data to sex.
 
-* Vote variable
+* Province: Both the datasets recorded the province a person lived in.
 
-```{r, include = FALSE}
+* religious importance: Both datasets recorded how the level of importance for religion. The categorical values in both the datasets were the same with the exception of an additional value "Refused" being present in the CES data. We removed rows containing this value from the CES data.
 
-#### You will need to update/clean the code below based off the variables you want to use in your poststratification.
+* Aboriginal: Both datasets recorded if a person was aboriginal or not. This was an option for question 66a in CES data which asked which ethnicity the person belonged to. q66a_15 recorded if the person belonged to an Aboriginal group. the value "(1) Selected" indicated the person identified as original and "(0) Not Selected". We filtered out other values as the indicated that the question was skipped or if the person was not sure. Then we mutated "(1) Selected" to "Yes" and "(0) Not Selected" to "No" to match the values of the variable in both dataset. Both datasets had values "Don't know" to indicate that a person was not sure. However, there very few rows with this value so we removed these rows.
 
-# survey_data <- 
-#   survey_data %>% 
-#   mutate(age = 2019-q2,
-#          vote_liberal = ifelse(q11==1, 1, 0)) %>%
-#   select(age, vote_liberal)
-# 
-# census_data <- census_data %>% 
-#   mutate(age=round(age)) %>% 
-#   select(age)
+* Education Level: Both datasets recorded the highest level of education completed by a person. However, these categories had slightly different names. For example, "University certificate, diploma or degree above the bach.." indicated that a person has a qualification above a bachelor's degree. In the CES data there are Master's degree as well as other degree above bachelor's degree. Hence we put the education level in both datasets into three groups: "Above Bachelor", "Below Bachelor" and "Bachelor".
 
-```
+* Household size: Both the datasets recorded household size.
+
+After finding the common variables, we removed rows with missing values in these columns for both the datasets. Then we renamed the columns of the CES data to match the names of the columns of the GSS data. This was done so that models constructed on the CES data could also be used on the GSS data for post-stratification. Then we took the common variables and constructed two datasets. One dataset containing the rows from the CES data and the other dataset containing the rows of the GSS data. Futhermore, in the first dataset, voting data was added to the CES variables. This is the outcome of interest
+
 
 <Include a description of the important variables.>
-```{r, include=FALSE}
-# make a table that contains the description for the 
+```{r, echo=FALSE}
+var_names <- colnames(survey_common_data)
+
+var_description <- c(
+  "Sex of the person",
+  "Province that a person is currently residing in",
+  "Level of education divided into three categories: 'Above Bachelor', 'Below Bachelor' and 'Bachelor'",
+  "How important is their religion to a person: 'Not important at all', 'Somewhat important',   'Very important', 'Not very important'   'Don't know'",
+  "Is the person aboriginal",
+  "How many people does a person share their living space with including themselves",
+  "Age of the person in years",
+  "Party that the person will/might/has vote(d) for"
+)
+
+description_table <- data.frame(var_names, var_description)
+kable(description_table, col.names = c('Variable Name', 'Description'), coption = 'Variable description table', padding = 20)
 ```
 
 
