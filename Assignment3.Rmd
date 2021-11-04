@@ -167,9 +167,9 @@ survey_common_data <- na.omit(survey_common_data)
 # write_csv(survey_common_data, "survey_common_data.csv")
 ```
 
-The regression model will be constructed, will be applied to both datasets, therefore only variables that appeared in both the datasets could be used. One way was examine if there were common terms present in the columns for both the dataset. Unfortunately most the columns the CES dataset were just question numbers. However, each column also had a label that stated the question itself. For example column "q2" had the label "IN what year were you born?". Hence we collected common words that appeared in the columns of the GSS data and the labels of the CES data to find possible topics that were common in both datasets. 
+The regression model will be constructed, will be applied to both datasets, therefore only variables that appeared in both the datasets could be used. One way was examine if there were common terms present in the columns for both the dataset. Unfortunately most the columns the CES dataset were just question numbers. However, each column also had a label that stated the question itself. For example column "q2" had the label "In what year were you born?". Hence we collected common words that appeared in the columns of the GSS data and the labels of the CES data to find possible topics that were common in both datasets. 
 
-Then for each topic we search the columns for both the dataset to see if any two column were describing indentical or similar variables. These are the variables we found:
+Then for each topic we search the columns for both the dataset to see if any two column were describing identical or similar variables. These are the variables we found:
 
 * Age: The age of the person was recorded in both data with the same column names.
 
@@ -286,11 +286,64 @@ kable(d2,
                     "min household size", "max household size"),
       caption = c("Comparing Age variable in both dataset"), align = "c")
 ```
-From this table, we can see that household size thas similar distributions, however CES data seems to indicate that people in this dataset tend to have more household members. The max size 15 could be a potential outlier 
+From this table, we can see that household size has similar distributions, however CES data seems to indicate that people in this dataset tend to have more household members. The max size 15 could be a potential outlier 
 
 \newpage
 ### Graphical Summaries
+```{r, echo=FALSE}
+# 1 histogram of province and vote
+ggplot(survey_common_data, aes(province, fill=vote))+
+  geom_bar()+
+  coord_flip()+
+  scale_fill_brewer(palette="Dark2")+
+  labs(title = 'Number of votes for each party per province',
+       caption = 'Figure 1',
+       y = 'Vote count', 
+       x = 'Province')
+```
+From this table, it looks that the Liberal party is the most popular party in Ontario and all the provinces to its left. Manitoba and all the provinces on its right favor the Conservatives most. It is perhaps somewhat surprising that Bloc Quebecois are not the most popular party in Quebec as it is a party that is most focused on Quebec.
 
+```{r, echo=FALSE}
+# 1 histogram of province and vote
+ggplot(survey_common_data, aes(education, fill=vote))+
+  geom_bar()+
+  coord_flip()+
+  scale_fill_brewer(palette="Dark2")+
+  labs(title = 'Number of votes for each party per Education Level',
+       caption = 'Figure 2',
+       y = 'Vote count', 
+       x = 'Education Level')
+```
+From this plot we can see, that the ratio of votes for each party does not change much across education levels. This seems to suggest that political affiliation is independent of education. 
+
+```{r, echo=FALSE}
+# scatter plot for age vs vote
+age_vote_aggr <- survey_common_data[, c("age", "vote")]%>% group_by(age, vote) %>%
+  mutate(Count = n())
+
+# ggplot(data = age_vote_aggr, aes(x = age, y = Count, color = vote))+
+#    geom_point()
+ggplot(survey_common_data, aes(age, fill=vote))+
+  geom_histogram(bins = 1 + 3.322*log(nrow(survey_common_data)))+
+  scale_fill_brewer(palette="Dark2")+
+  labs(title = 'Number of votes of each party vs age',
+       caption = 'Figure 3',
+       y = 'Vote count', 
+       x = 'Education Level')
+```
+From this table we can see the number of votes with respect to age, follows a roughly normal distribution. With most of the votes coming from people aged between 50 and 75. There is not clear ratio differences in vote ratio across the ages ages upto 75. However, the votes for parties other than Liberal or Conservatives decrease significantly for age groups older than 75.
+
+```{r, echo=FALSE}
+ggplot(survey_common_data, aes(religion_importance, fill=vote))+
+  geom_bar()+
+  coord_flip()+
+  scale_fill_brewer(palette="Dark2")+
+  labs(title = 'Number of votes for each party vs religiousness',
+       caption = 'Figure 4',
+       y = 'Vote count', 
+       x = 'religiousness Level')
+```
+From this table, we again observe that the vote ratio between parties don't change across the groups. This suggests that political affiliation is independent of religion.
 
 ## Methods
 
