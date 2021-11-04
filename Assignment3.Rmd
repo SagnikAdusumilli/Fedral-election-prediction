@@ -13,8 +13,8 @@ library(openintro)
 library(tidyverse)
 library(dplyr)
 # should run the lines below if you don't have cesR package installed
-#install.packages("devtools")
-#devtools::install_github("hodgettsp/cesR")
+# install.packages("devtools")
+# devtools::install_github("hodgettsp/cesR")
 library(cesR)
 library(caret)
 library(Hmisc)
@@ -23,13 +23,6 @@ library(magrittr)
 library(expss)
 library(labelled)
 ```
-
-
-```{r}
-install.packages("devtools")
-devtools::install_github("hodgettsp/cesR")
-```
-
 
 ## Introduction
 
@@ -170,8 +163,8 @@ survey_common_data <- survey_common_data %>%
 
 survey_common_data <- na.omit(survey_common_data)
   
-write_csv(gss_common_data, "gss_common_data.csv")
-write_csv(survey_common_data, "survey_common_data.csv")
+# write_csv(gss_common_data, "gss_common_data.csv")
+# write_csv(survey_common_data, "survey_common_data.csv")
 ```
 
 The regression model will be constructed, will be applied to both datasets, therefore only variables that appeared in both the datasets could be used. One way was examine if there were common terms present in the columns for both the dataset. Unfortunately most the columns the CES dataset were just question numbers. However, each column also had a label that stated the question itself. For example column "q2" had the label "IN what year were you born?". Hence we collected common words that appeared in the columns of the GSS data and the labels of the CES data to find possible topics that were common in both datasets. 
@@ -236,12 +229,19 @@ survey_common_data %>%
     kable(caption = "Frequency for each category in the CES data")
 ```
 From the above table we can gain the following insights on the survey data:
-* There seems to slightly more males and females in this dataset
-* Most of the people in the survey have an education level below a bachelor's degree
-* Most of the people in give a lot of importance or at least some importance to their religion
-* The large majority of the people in the survey are not Aboriginal. This perhaps suggests that this variable might not be of use for the model
+
+* There seems to slightly more males and females in this dataset.
+
+* Most of the people in the survey have an education level below a bachelor's degree.
+
+* Most of the people in give a lot of importance or at least some importance to their religion.
+
+* The large majority of the people in the survey are not Aboriginal. This perhaps suggests that this variable might not be of use for the model.
+
 * It seems that the most popular party was the Conservative party followed closely by the Liberal party in 2019
-* There does not seem to be an significant difference in the number of awswered the survey for each province. This indicates that this survey represents the data of each province fairly well. 
+
+* There does not seem to be an significant difference in the number of answered the survey for each province. This indicates that this survey represents the data of each province fairly well. 
+
 \newpage
 ```{r, echo = FALSE}
 gss_common_data %>% 
@@ -257,7 +257,39 @@ gss_common_data %>%
     split_columns() %>%
     kable(caption = "Frequency for each category in the GSS data")
 ```
+In the census data the differences observed in the categorical variables are similar to the differences observed in the survey data, with the exception of Sex. There are more females than males in the census data. This indicates that there is an underrepresentation of females in the data survey data.
 
+\newpage
+```{r, echo=FALSE}
+means <- c(mean(gss_common_data$age), mean(survey_common_data$age))
+mins <- c(min(gss_common_data$age), min(survey_common_data$age))
+maxes <- c(max(gss_common_data$age), max(survey_common_data$age))
+devs <- c(sd(gss_common_data$age), sd(survey_common_data$age))
+d1 <- data.frame(means, mins, maxes, devs)
+rownames(d1) <- c("From GSS dataset", "From CES Dataset")
+kable(d1, 
+      col.names = c("mean age", "minmum age", "maximum age", "standard deviation in years"),
+      caption = c("Comparing Age variable in both dataset"), align = "c")
+```
+Even though the mean age is similar in both datasets, the magnitude of the min, max and standard deviation values indicates that age has a wider distribution in GSS dataset.
+
+```{r, echo=FALSE}
+medians_hh <- c(median(gss_common_data$hh_size), median(survey_common_data$hh_size))
+mins_hh <- c(min(gss_common_data$hh_size), min(survey_common_data$hh_size))
+maxes_hh <- c(max(gss_common_data$hh_size), max(survey_common_data$hh_size))
+q1_hh <- c(quantile(gss_common_data$hh_size, 0.25), quantile(survey_common_data$hh_size, 0.25))
+q2_hh <- c(quantile(gss_common_data$hh_size, 0.75), quantile(survey_common_data$hh_size, 0.75))
+d2 <- data.frame(q1_hh, medians_hh, q2_hh, mins_hh, maxes_hh)
+rownames(d2) <- c("From GSS dataset", "From CES Dataset")
+kable(d2, 
+      col.names = c("25th qauntile household size", "median household size", "75th quantile household size", 
+                    "min household size", "max household size"),
+      caption = c("Comparing Age variable in both dataset"), align = "c")
+```
+From this table, we can see that household size thas similar distributions, however CES data seems to indicate that people in this dataset tend to have more household members. The max size 15 could be a potential outlier 
+
+\newpage
+### Graphical Summaries
 
 
 ## Methods
