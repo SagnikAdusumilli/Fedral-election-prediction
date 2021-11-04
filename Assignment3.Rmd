@@ -32,7 +32,7 @@ Some of the important terminologies is the Majority government, which is the par
 
 The research question we would be investigating is that does age, religion and location enough to predict the number of votes for each party?
 
-In this paper we will use post-stratification and multilevel regression to investigate if certain features of the population population such as: age, religion and location can be used to predict how many votes each party gets in a federal election
+In this paper we will use post-stratification and multilevel regression to investigate if certain features of the population population such as: age, religion, sex, household size and province can be used to predict how many votes each party gets in a federal election
 
 
 ## Data
