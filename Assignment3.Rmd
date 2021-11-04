@@ -329,7 +329,7 @@ ggplot(survey_common_data, aes(age, fill=vote))+
   labs(title = 'Number of votes of each party vs age',
        caption = 'Figure 3',
        y = 'Vote count', 
-       x = 'Education Level')
+       x = 'Age')
 ```
 From this table we can see the number of votes with respect to age, follows a roughly normal distribution. With most of the votes coming from people aged between 50 and 75. There is not clear ratio differences in vote ratio across the ages ages upto 75. However, the votes for parties other than Liberal or Conservatives decrease significantly for age groups older than 75.
 
