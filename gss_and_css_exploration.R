@@ -125,7 +125,7 @@ gss_data <- gss_data %>%
   filter(!is.na(education)) %>%
   mutate(education = case_when(
     education == "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)" ~ "Bachelor",
-    education == "University certificate, diploma or degree above the bach.." ~ "Above Bachelor",
+    education == "University certificate, diploma or degree above the bach..." ~ "Above Bachelor",
     TRUE ~ "Below Bachelor",
   ))
 
@@ -157,4 +157,18 @@ survey_common_data <- na.omit(survey_common_data)
 write_csv(gss_common_data, "gss_common_data.csv")
 write_csv(survey_common_data, "survey_common_data.csv")
   
+library(nnet)
+# set reference level
+train <- survey_common_data
+# train$Class <- relevel(as.factor(train$vote), ref="Greens")
+# train <- train %>% select(-vote)
+multinom_model <- multinom(vote ~ ., data = train)
 
+# Predicting the values for train dataset
+train$ClassPredicted <- predict(multinom_model, newdata = train, type = "prob")
+
+# Building classification table
+tab <- table(train$vote, train$ClassPredicted)
+
+# Calculating accuracy - sum of diagonal elements divided by total obs
+round((sum(diag(tab))/sum(tab))*100,2)
