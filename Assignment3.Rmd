@@ -1,6 +1,6 @@
 ---
-title: "Informative Title Name"
-author: "GROUP 4: Shubhra Bedi, Shree Khajuria, "
+title: "Federal election forecast 2025"
+author: "GROUP 4: Sagnik Adusumilli, Shubhra Bedi, Shree Khajuria, Aishwarya Ganesh Ram"
 date: November 5, 2021
 subtitle: STA304 - Assignment 3
 output:
