@@ -31,9 +31,9 @@ library(stringr)
 
 The Canadian Election Study is an annual survey of voting and other preferences and demographics which are thought to pertain to political behavior of Canadian voters.This survey is used to predict the overall popular vote of the next Canadian federal election (tentatively 2025) using a regression model with post-stratification.
 
-Some of the important terminologies is the Majority government, which is the party that won the most number of votes and were elected to become the ruling government. Next, is the Minority party, it's the party with the least votes and they are elected to become the opposition to the majority party. Also, some of the parties mentioned below are Bloc Quebecois, Conservatives, Greens, Liberal, NDP, and People’s Party.
+Some of the important terminologies is the Majority government.It refers to one or multiple governing parties that hold an absolute majority of seats in a legislature. This is opposed to a minority government, where the largest party in a legislature only has a plurality of seats. A government majority determines the balance of power. Also, some of the parties mentioned below are Bloc Quebecois, Conservatives, Greens, Liberal, NDP, and People’s Party.
 
-The research question we would be investigating is that does age, religion and location enough to predict the number of votes for each party?
+The main objective of this paper is to investigate which factors from the survey data can be applied to the census data to stratify the general population by the party they vote for. Using this we can predict which party is more likely to get elected for each province. Furthermore, we could also predict if the government for 2025 election is a minority or majority government
 
 In this paper we will use post-stratification and multilevel regression to investigate if certain features of the population population such as: age, religion, sex, household size and province can be used to predict how many votes each party gets in a federal election
 
