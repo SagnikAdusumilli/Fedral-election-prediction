@@ -29,21 +29,18 @@ library(stringr)
 
 ## Introduction
 
-The Canadian Election Study is an annual survey of voting and other preferences and demographics which are thought to pertain to political behavior of Canadian voters.This survey is used to predict the overall popular vote of the next Canadian federal election (tentatively 2025) using a regression model with post-stratification.
+The Canadian Election Study is an annual survey of voting and other preferences and demographics which are associated with political behavior of Canadian voters (citation). Using this data, we will attempt to predict the overall popular vote of the next Canadian federal election (tentatively 2025) using a logistic multinomial regression model with post-stratification.
 
-Some of the important terminologies is the Majority government.It refers to one or multiple governing parties that hold an absolute majority of seats in a legislature. This is opposed to a minority government, where the largest party in a legislature only has a plurality of seats. A government majority determines the balance of power. Also, some of the parties mentioned below are Bloc Quebecois, Conservatives, Greens, Liberal, NDP, and People’s Party.
+Some of the important terminologies is **majority government**. It refers to one or multiple governing parties that hold an absolute majority of seats in a legislature. This is opposed to a **minority government**, where the largest party in a legislature only has a plurality of seats[1]. A government majority determines the balance of power. The parties being considered here are Bloc Quebecois, Conservatives, Greens, Liberal, NDP, and People’s Party.
 
-The main objective of this paper is to investigate which factors from the survey data can be applied to the census data to stratify the general population by the party they vote for. Using this we can predict which party is more likely to get elected for each province. Furthermore, we could also predict if the government for 2025 election is a minority or majority government
-
-In this paper we will use post-stratification and multilevel regression to investigate if certain features of the population population such as: age, religion, sex, household size and province can be used to predict how many votes each party gets in a federal election
-
+The main objective of this paper is to investigate which factors from the survey data can be applied to the census data to stratify the general population by the party they vote for. Using this we can predict which party is more likely to get elected for each province. Furthermore, we could also predict if the government for 2025 election is a minority or majority government. We think the features that will be important for prediction are: age, religion, sex, household size and province.
 
 ## Data
 
 ### Data Collection Process
-The Data is a collection of two datasets. The first dataset contains data from the General Social Survey on Family (cycle 31) on 2017. Canada's General Social Survey (GSS) program conducts annual survey covering one topic in depth (citation). As such, this dataset contains mostly contains information pertaining to families. However, we will later investigate some common variables between this dataset and the Canada Election Study (CES) dataset. This will give us a list of factors in the general population that could be potentially associated to political affiliations
+The Data is a collection of two datasets. The first dataset contains data from the General Social Survey on Family (cycle 31) on 2017. Canada's General Social Survey (GSS) program conducts annual survey covering one topic in depth (citation)[2]. As such, this dataset mostly contains information pertaining to families. However, we will later investigate some common variables between this dataset and the Canada Election Study (CES) dataset. This will give us a list of factors in the general population that could be potentially associated to political affiliations.
 
-the Canada Election Study (CES) data which was collected in 2019. This data was collected from a questionnaire delivered to the people living in Canada through the Computer Assisted Telephone Interviewing(CATI). Phone calls were made potential interviewees during both the day and evening for every weekday. These questions asked some personal information such as their age and also political opinions such as "what is your opinion on Justin Trudeau?" (citation)
+Canada Election Study (CES) data was collected from a questionnaire delivered to the people living in Canada through the Computer Assisted Telephone Interviewing(CATI) in 2019. Phone calls were made to potential interviewees during both the day and evening hours for every weekday[3]. These questions asked some personal information such as their age and also political opinions such as "what is your opinion on Justin Trudeau?"
 
 ```{r, include = FALSE}
 # loading the data
@@ -173,27 +170,28 @@ survey_common_data$religion_importance <- survey_common_data$religion_importance
 # write_csv(survey_common_data, "survey_common_data.csv")
 ```
 
-The regression model to be constructed, will be applied to both datasets, therefore only variables that appeared in both the datasets could be used. One way was examine if there were common terms present in the columns for both the dataset. Unfortunately most the columns the CES dataset were just question numbers. However, each column also had a label that stated the question itself. For example column "q2" had the label "In what year were you born?". Hence we collected common words that appeared in the columns of the GSS data and the labels of the CES data to find possible topics that were common in both datasets. 
+The regression model to be constructed will be applied to both datasets, therefore only variables that appeared in both the datasets could be used. First we examined if there were common terms present in the columns for both the datasets. Unfortunately most the columns the CES dataset were just question numbers. However, each column also had a label that stated the question itself. For example column "q2" had the label "In what year were you born?". Hence we collected common words that appeared in the columns of the GSS data and the labels of the CES data to find possible topics that were common in both datasets. 
 
-Then for each topic we search the columns for both the dataset to see if any two column were describing identical or similar variables. These are the variables we found:
+Then for each topic we searched the columns for both the datasets to see if any two column were describing identical or similar variables. These are the variables we found:
 
-* Age: The age of the person was recorded in both data with the same column names.
+* Age: The age of the person was recorded in both datasets with the same column names.
 
 * Sex: Gender was recorded in CES data and sex was recorded in the GSS data. Here we assumed the people who reported their gender to be male or female also would have the same sex as their gender. Hence we removed all genders that were not male or female and renamed the q3 column in the CES data to sex.
 
 * Province: Both the datasets recorded the province a person lived in.
 
-* religious importance: Both datasets recorded how the level of importance for religion. The categorical values in both the datasets were the same with the exception of an additional value "Refused" being present in the CES data. We removed rows containing this value from the CES data.
+* religious importance: Both datasets recorded how devoted they were to their religion. The categorical values in both the datasets were the same with the exception of an additional value "Refused" being present in the CES data. We removed rows containing this value from the CES data.
 
-* Aboriginal: Both datasets recorded if a person was aboriginal or not. This was an option for question 66a in CES data which asked which ethnicity the person belonged to. q66a_15 recorded if the person belonged to an Aboriginal group. the value "(1) Selected" indicated the person identified as original and "(0) Not Selected". We filtered out other values as the indicated that the question was skipped or if the person was not sure. Then we mutated "(1) Selected" to "Yes" and "(0) Not Selected" to "No" to match the values of the variable in both dataset. Both datasets had values "Don't know" to indicate that a person was not sure. However, there very few rows with this value so we removed these rows.
+* Aboriginal: Both datasets recorded if a person was aboriginal or not. This was an option for question 66a in CES data which asked which ethnicity the person belonged to. q66a_15 recorded if the person belonged to an Aboriginal group. The value "(1) Selected" indicated the person identified as aboriginal and "(0) Not Selected" indicated otherwise. We filtered out other values that implied that the question was skipped or if the person was not sure. Then we mutated "(1) Selected" to "Yes" and "(0) Not Selected" to "No" to match the values of the variable in both datasets. Both datasets had values "Don't know" to indicate that a person was not sure. However, there very few rows with this value so we removed these rows.
 
-* Education Level: Both datasets recorded the highest level of education completed by a person. However, these categories had slightly different names. For example, "University certificate, diploma or degree above the bach.." indicated that a person has a qualification above a bachelor's degree. In the CES data there are Master's degree as well as other degree above bachelor's degree. Hence we put the education level in both datasets into three groups: "Above Bachelor", "Below Bachelor" and "Bachelor".
+* Education Level: Both datasets recorded the highest level of education completed by a person. However, these categories had slightly different names. For example, "University certificate, diploma or degree above the bach..." indicated that a person has a qualification above a bachelor's degree. In the CES data there are Master's degree as well as other degree above bachelor's degree. Hence we put the education level in both datasets into three groups: "Above Bachelor", "Below Bachelor" and "Bachelor".
 
 * Household size: Both the datasets recorded household size.
 
-After finding the common variables, we removed rows with missing values in these columns for both the datasets. Then we renamed the columns of the CES data to match the names of the columns of the GSS data. This was done so that models constructed on the CES data could also be used on the GSS data for post-stratification. Then we took the common variables and constructed two datasets. One dataset containing the rows from the CES data and the other dataset containing the rows of the GSS data. Futhermore, in the first dataset, voting data was added to the CES variables. This is the outcome of interest
+After finding the common variables, we removed rows with missing values in these columns for both the datasets. Then we renamed the columns of the CES data to match the names of the columns of the GSS data. This was done so that models constructed on the CES data could also be used on the GSS data for post-stratification. Then we took the common variables and constructed two datasets. One dataset containing the rows from the CES data and the other dataset containing the rows of the GSS data. Futhermore, voting data was added to the CES data This is the outcome of interest
 
 ```{r, echo=FALSE}
+# [5] used kable from knitr package to create tables
 var_names <- colnames(survey_common_data)
 
 var_description <- c(
@@ -240,13 +238,13 @@ From the above table we can gain the following insights on the survey data:
 
 * Most of the people in the survey have an education level below a bachelor's degree.
 
-* Most of the people in give a lot of importance or at least some importance to their religion.
+* Most of the people in the survey give a lot of importance or at least some importance to their religion.
 
 * The large majority of the people in the survey are not Aboriginal. This perhaps suggests that this variable might not be of use for the model.
 
 * It seems that the most popular party was the Conservative party followed closely by the Liberal party in 2019
 
-* There does not seem to be an significant difference in the number of answered the survey for each province. This indicates that this survey represents the data of each province fairly well. 
+* There does not seem to be any significant difference in the number of people that answered the survey for each province. This indicates that this survey represents the data of each province fairly well. 
 
 \newpage
 ```{r, echo = FALSE}
@@ -263,7 +261,7 @@ gss_common_data %>%
     split_columns() %>%
     kable(caption = "Frequency for each category in the GSS data")
 ```
-In the census data the differences observed in the categorical variables are similar to the differences observed in the survey data, with the exception of Sex. There are more females than males in the census data. This indicates that there is an underrepresentation of females in the data survey data.
+In the census data the differences observed in the categorical variables are similar to the differences observed in the survey data, with the exception of Sex. There are more females than males in the census data. This indicates that there is an underrepresentation of females in the survey data.
 
 \newpage
 ```{r, echo=FALSE}
@@ -320,7 +318,7 @@ ggplot(survey_common_data, aes(education, fill=vote))+
        y = 'Vote count', 
        x = 'Education Level')
 ```
-From this plot we can see, that the ratio of votes for each party does not change much across education levels. This seems to suggest that political affiliation is independent of education. 
+From this plot we can see that the ratio of votes for each party does not change much across education levels. This seems to suggest that political affiliation is independent of education. 
 
 ```{r, echo=FALSE}
 # scatter plot for age vs vote
@@ -338,7 +336,7 @@ ggplot(survey_common_data, aes(age, fill=vote))+
        y = 'Vote count', 
        x = 'Age')
 ```
-From this table we can see the number of votes with respect to age, follows a roughly normal distribution. With most of the votes coming from people aged between 50 and 75. There is not clear ratio differences in vote ratio across the ages ages upto 75. However, the votes for parties other than Liberal or Conservatives decrease significantly for age groups older than 75.
+From this table we can see the number of votes with respect to age, follows a roughly normal distribution. With most of the votes coming from people aged between 50 and 75. There is no clear differences in vote ratio across the ages ages upto 75. However, the votes for parties other than Liberal or Conservatives decrease significantly for age groups older than 75.
 
 ```{r, echo=FALSE}
 ggplot(survey_common_data, aes(religion_importance, fill=vote))+
@@ -357,32 +355,33 @@ From this table, we again observe that the vote ratio between parties don't chan
 The question that we are trying to answer is whether factors such as sex, province, age, education, religion importance, aboriginal and household size help us predict someone's voting preference. 
 
 
-### Model Specifics
+### Model Specifics[5]
 
-We will be using multinomial logistic regression to build our model as our dependent variable, or our response variable is a nominal variable. Multinomial logistic regression is an extension of binary logistic regression, but instead of two categories of the dependent variable it allows for multiple. Therefore it is suitable for our model as we are predicting which party will tend to have the overall popular vote of the next Canadian federal election (tentatively 2025). The formula can be written as follows:
-Suppose our outcome of interest is $Y$ which has the levels $y_1, \ldots , y_j$ and we want to find predict $Y$ using the predictors $X_1, \ldots , X_k$. Then we can express the log odds of each level of Y as:
+We will be using multinomial logistic regression to build our model. Multinomial logistic regression is an extension of binary logistic regression, but instead of two categories of the dependent variable it allows for multiple. Therefore it is suitable for our model as we are predicting which party will tend to have the overall popular vote of the next Canadian federal election (tentatively 2025). The formula can be written as follows:
+Suppose our outcome of interest is $Y$ which has the levels $y_1, \ldots , y_j$ and we want to predict $Y$ using the predictors $X_1, \ldots , X_k$. Then we can express the log odds of each level of Y as:
 
 $$ log\left( \frac{P(y_i)}{1-P(y_i)} \right) = \beta_0+ \beta_1 X_1 +  \ldots +\beta_kX_k + \epsilon$$
 
-where $log\left( \frac{P(y_i)}{1-P(y_i)} \right)$ is the log-odd of observing the outcome $y_i$. In this case $y_i$ outcome that the ith party gets the vote. $\beta_0$ represents the default value of the log-odds. The coefficient $B_l$ for $l \in \{ 1, 2, \ldots k\}$represent the change in log odds for one unit change in $X_l$ assuming that all other predictor values being constant. 
+where $log\left( \frac{P(y_i)}{1-P(y_i)} \right)$ is the log-odds of observing the outcome $y_i$. In this case $y_i$ represents the outcome that the ith party gets the vote. $\beta_0$ represents the default value of the log-odds for $y_i$. The coefficient $B_l$ for $l \in \{ 1, 2, \ldots k\}$represent the change in log odds for one unit change in $X_l$. This is assuming that all other predictor values are being held constant. 
 $\epsilon$ is a random variable that has a standard normal distribution. This term represents the error term in our prediction.
 
 To get a prediction from this model we can do the following process: 
-Let $\eta = \hat{\beta_0} + \hat{\beta_1}X_1 + \hat{\beta_2}X_2 + \ldots + \hat{\beta_k}X_k$.
+Let $\eta = \beta_0 + \beta_1X_1 + \beta_2X_2 + \ldots + \beta_kX_k$.
 Now we have that $log\left(  \frac{P(y_i)}{1-P(y_i)} \right) = \eta$.
 Therefore we get that $P(y_i) = \frac{e^{\eta}}{1+ e^\eta}$.
-we now have the probability of outcome $y_i$ from predictors. Now we can set a threshold $\gamma$ where if $P(y_i) \ge \gamma$ we predict 1 and 0 otherwise. Usually the $\gamma$ is set to 0.5 which means 50% probability
+We now have the probability of outcome $y_i$ from the predictors. Now we can set a threshold $\gamma$ where if $P(y_i) \ge \gamma$ we predict 1 and 0 otherwise. Usually the $\gamma$ is set to 0.5 which means 50% probability.
 
-### Assumptions
+### Assumptions[6]
 
-* We assume choice of vote given to one party is not related to the choice of vote given to another party. This is know as assumption of independence among dependent variable choices 
-* We also assume that we cannot perfectly separate all the cells by outcome groups. Each group would the party in this case
+* We assume choice of vote given to one party is not related to the choice of vote given to another party. This is know as assumption of independence among dependent variable choices. 
+
+* We also assume that we cannot perfectly separate all the cells by outcome groups. Each group would consist of people that voted for a particular party in this case.
+
 * We also assume that there is no natural ordering present between the party, meaning that we treat each party as equal. 
 
 ### Model construstion and testing
-To get the estimates of each variable, we will be using the iterative maximum log likelihood estimation procedure (citation needed). For variable selection, one of the methods we will use  is backward selection using Akaike Information Criteria (AIC). The Akaike information criterion (AIC) is a mathematical method used for evaluating the best fit model. We use it by comparing multiple variables and their combination and select which combination is the best fit for the data. The AIC considers two things, the number of independent variables we used and the maximum likelihood estimate of the model. Therefore according to the AIC the best fit model would be one that considers the most variation and the least amount of variables. We have made use of the backward selection to select the right model. Backward selection works with all variables and keeps reducing one along the way to choose the best fit model. We have also took in consideration the accuracy of the model in our code, therefore choosing the model with the highest accuracy as well as lowest AIC.
 
-Furthermore, we will also split the dataset into testing and training set and test the accuracy of each model on the testing set to further evaluate which model is more suitable
+To get the estimates of each variable, we will be using the iterative maximum log likelihood estimation procedure [7]. For variable selection, one of the methods we will use  is backward selection using Akaike Information Criteria (AIC). This is a method used for evaluating the best fit model. We use it by comparing multiple variables and their combination and select which combination is the best fit for the data. The AIC considers two things, the number of independent variables we used and the maximum likelihood estimate of the model. Therefore according to the AIC the best fit model would be one that considers the most variation and the least amount of variables. We have made use of the backward selection to select the right model. Backward selection works with all variables and keeps reducing one along the way to choose the best fit model[8]. Furthermore, we will also split the dataset into testing and training set and test the accuracy of each model on the testing set to further evaluate which model is more suitable[9].
 ```{r include=FALSE}
 # set reference level
 
@@ -445,9 +444,11 @@ best_model
 ```
 
 
-## Post-Stratification 
-We will post stratification method in order to estimate the proportion of voters in each province.The reason post stratification is preferred is because stratified sample design increases the accuracy of estimates compared to a simple random sample especially for non-probability based sampling.
-We partition the data into thousands of demographic cells, in the case of our study these cells are grouped by provinces and then we estimate response variable for each cell using a multilevel regression model. The sum of this cell levels estimates population-level estimate, $\hat{y}^{PS}$, by weighting each cell by its relative proportion in the population. The formula for this is:
+## Post-Stratification
+
+We will use post stratification method in order to estimate the proportion of voters in each province. The reason post stratification is preferred is because stratified sample design increases the accuracy of estimates compared to a simple random sample especially for non-probability based sampling.
+
+We partition the data into thousands of demographic cells. In the case of our study these cells are grouped by provinces and then we estimate response variable for each cell using a multilevel regression model. The sum of this cell levels computes the population-level estimate, $\hat{y}^{PS}$, by weighting each cell by its relative proportion in the population. The formula for this is:
 
 $$ \hat{y}^{PS} = \sum N_j \hat{y}_j /  \sum N_j  $$
 Where $\hat{y}_j$ is the estimate in each cell. And $N_j $ is the population size of the $J^{th}$ cell based off demographics. 
@@ -473,7 +474,7 @@ acc_best <- round((sum(diag(tab1))/sum(tab))*100,2)
 acc_full <- round((sum(diag(tab2))/sum(tab))*100,2)
 
 ```
-The original multinomial logistic regression model (with all the variables) had an AIC of `r AIC(multinom_model)` but has a lower training accuracy than another model which had an AIC of `r AIC(best_model)`. However on the test set, the full model had an  test accuracy of `r acc_full` and the other model had an test accuracy of `r acc_best`. Hence we picked the original model as the final model.
+The original multinomial logistic regression model (with all the variables) had an AIC of `r AIC(multinom_model)` but has a lower training accuracy than another model which had an AIC of `r AIC(best_model)`. However on the test set, the full model had a test accuracy of `r acc_full` and the other model had a test accuracy of `r acc_best`. Hence we picked the original model as the final model.
 
 ```{r, echo=FALSE}
 # have columns of coeffiecient for each table
@@ -481,10 +482,11 @@ model.table <- broom::tidy(multinom_model)
 model.table <- model.table %>% rename(Party = y.level)
 kable(model.table, caption = "Model output for each province")
 ```
-Here the reference level is the party "Bloc Quebecois". This means that all coefficient estimates values are relative to this party. Consider the estimated coefficient of age for example. This can be interpreted the following: If all other variables are held constant then increasing age by one unit decreases the log-odds of the person voting for Conservative by 0.01697 relative to the log odds of them voting for "Bloc Quebecois". The standard error is the estimated deviance of this this estimate and the other statistic is the Z-score for the estimate. This is the z-score under then null hypothesis that the real coefficient value is 0. The p.value is the probability of deriving the observed estimated value under the null hypothesis. 
+
+Here the reference level is the party "Bloc Quebecois". This means that all coefficient estimates values are relative to this party. Consider the estimated coefficient of age for example. This can be interpreted the following: If all other variables are held constant then increasing age by one unit decreases the log-odds of the person voting for Conservative by 0.01697 relative to the log odds of them voting for "Bloc Quebecois". The standard error is the estimated deviance. The other statistic is the Z-score, which the score under the null hypothesis that the real coefficient value is 0. The p.value is the probability of deriving the observed estimated value under the null hypothesis[10]. 
 
 \newpage
-We then performed our post-stratification where we first found the total number of individuals that voted for each party in each province. After, we took the party which had the most number of votes in each province to complete our post-stratification.
+We then performed our post-stratification where we first found the total number of individuals that voted for each party in each province. Then, we took the party which had the most number of votes in each province to complete our post-stratification.
 ```{r echo=FALSE}
 
 # Here I will perform the post-stratification calculation
@@ -501,7 +503,7 @@ gss_popular_vote <- gss_data_counts %>%
 kable(gss_popular_vote, caption = "Post-Stratification Results showing Popular Vote by Province", col.names = c("Province", "Predicted Party", "Count"), align = "lcr")
 ```
 
-The above table shows that among the ten provinces in the dataset, the Liberal Party is the most favored overall among individuals surveyed. The Liberal and Conservative Party are most favored in five provinces each. [https://www.datanovia.com/en/lessons/identify-and-remove-duplicate-data-in-r/]
+The above table shows that among the ten provinces in the dataset, the Liberal Party is the most favored overall among individuals surveyed. The Liberal and Conservative Party are most favored in five provinces each[11].
 
 
 ```{r echo=FALSE}
@@ -516,27 +518,49 @@ ggplot(data = gss_popular_vote, aes(x=province, y=count, fill=ClassPredicted))+g
 
 ```
 
-The bar graph above shows that the Liberal Party was predicted to win by most individuals in Ontario, Quebec, Nova Scotia, Newfoundland, and Prince Edward Island. The Conservative Party had the popular vote in the remaining provinces. Ontario and Quebec are the two largest provinces in Canada and as seen in the graph have a much larger number people voting for the Liberal Party as compared to other Liberal and Conservative provinces. Hence, it makes sense that the Liberal party is predicted to win the election across all provinces in Canada. [https://www.biostars.org/p/464531/]
+The bar graph above shows that the Liberal Party was predicted to win by most individuals in Ontario, Quebec, Nova Scotia, Newfoundland, and Prince Edward Island. The Conservative Party had the popular vote in the remaining provinces. Ontario and Quebec are the two largest provinces in Canada and as seen in the graph have a much larger number of people voting for the Liberal Party as compared to other Liberal and Conservative provinces. Hence, it makes sense that the Liberal party is predicted to win the election across all provinces in Canada[12].
 
 ## Conclusions
 
-Our aim was to analyze whether factors such as sex, province, age, education, religion importance, aboriginal, and household size help us predict an individual's voting preference. We expected an overall preference towards the Liberal Party among individuals since this was the majority party in Canada in 2019. We built a multinomial logistic regression model. We divided our data into training and testing tests to measure the accuracy of our model in order to accurately predict the voting trend of the public. We used the backward selection method and considered the to select the best model. 
+Our aim was to analyze whether factors such as sex, province, age, education, religion importance, aboriginal, and household size help us predict an individual's voting preference. We expected an overall preference towards the Liberal Party among individuals since this was the majority party in Canada in 2019. We built a multinomial logistic regression model. We divided our data into training and testing tests to measure the accuracy. We used the backward selection method and testing accuracy to select the best model. 
 
 We used post stratification method in order to estimate the proportion of voters in each province. We found that the Liberal Party was favored in five provinces and the Conservative party was favored in the other five. The Liberal Party was the most favored overall among all provinces in Canada.
 
 A few weaknesses in our approach include:
 
-* The AIC approach only provides a relative test of model quality. AIC would provide no indication if the statistical models used are equally a poor fit for the data [https://www.thoughtco.com/introduction-to-akaikes-information-criterion-1145956].
+* The AIC approach only provides a relative test of model quality. AIC would provide no indication if the statistical models used are equally a poor fit for the data[13].
 
-* When working with high dimensional datasets such as this one, there could be an over-fitting of the model on the training set. This may lead to inaccurate results in the model. We can use regularization techniques to avoid over-fitting, however, this will make the model much more complex [https://iq.opengenus.org/advantages-and-disadvantages-of-logistic-regression/].
+* When working with high dimensional datasets such as this one, there could be an over-fitting of the model on the training set. This may lead to inaccurate results in the model. We can use regularization techniques to avoid over-fitting, however, this will make the model much more complex [14].
 
 * In the future, we can aim to conduct a post-stratification to estimate proportion of votes for other variables such as sex, education, or household size and analyze their voting preferences. This would help us broaden our analysis and draw up other conclusions on our dataset.
 
 
 ## Bibliography
 
-1. Grolemund, G. (2014, July 16) *Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/articles_intro.html](https://rmarkdown.rstudio.com/articles_intro.html). (Last Accessed: January 15, 2021) 
+1. House of Commons procedure and Practice. House of Commons Procedure and Practice - 2. Parliaments and Ministries - Majority Supporting the Government. (n.d.). Retrieved November 5, 2021, from https://www.ourcommons.ca/procedure-book-livre/Document.aspx?sbdid=A24E8688-CC45-4245-8F5C-DD32F4AA9B01&amp;sbpid=040856E0-D15F-48AD-BAB4-7712C0E7976A&amp;Language=E&amp;Mode=1. 
 
-2. Dekking, F. M., et al. (2005) *A Modern Introduction to Probability and Statistics: Understanding why and how.* Springer Science & Business Media.
+2. Government of Canada, S. C. (2017, February 27). The General Social Survey: An overview. Government of Canada, Statistics Canada. Retrieved November 5, 2021, from https://www150.statcan.gc.ca/n1/pub/89f0115x/89f0115x2013001-eng.htm.
 
-3.  Allaire, J.J., et. el. *References: Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/docs/](https://rmarkdown.rstudio.com/docs/). (Last Accessed: January 15, 2021) 
+3. Stephenson, L. B., Harell, A., Rubenson, D., &amp; Loewen, P. J. (2020, May 1). 2019 Canadian Election Study - Phone Survey. Harvard Dataverse. Retrieved November 5, 2021, from https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi%3A10.7910%2FDVN%2F8RHLG1. 
+
+4. Kable: Create tables in latex, HTML, markdown and restructuredtext. RDocumentation. (n.d.). Retrieved November 5, 2021, from https://www.rdocumentation.org/packages/knitr/versions/1.36/topics/kable. 
+
+5. MULTINOMIAL LOGISTIC REGRESSION | R DATA ANALYSIS EXAMPLES. IDRE Stats. (n.d.). Retrieved November 5, 2021, from https://stats.idre.ucla.edu/r/dae/multinomial-logistic-regression/.
+
+6. MLR_JDS_AUG2011.PDF - multinomial logistic regression Dr Jon Starkweather and dr Amanda Kay Moske Multinomial logistic regression is used to predict: Course hero. mlr_jds_aug2011.pdf - Multinomial Logistic Regression Dr Jon Starkweather and Dr Amanda Kay Moske Multinomial logistic regression is used to predict | Course Hero. (n.d.). Retrieved November 5, 2021, from https://www.coursehero.com/file/74805130/mlr-jds-aug2011pdf/. 
+
+7. Maximum likelihood estimation of logistic ... - CZEP. (n.d.). Retrieved November 5, 2021, from https://czep.net/stat/mlelr.pdf. 
+
+8. Zhang, Z. (2016, April). Variable selection with stepwise and best subset approaches. Annals of translational medicine. Retrieved November 5, 2021, from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4842399/. 
+
+9. Datasciencebeginners. (2020, May 27). Multinomial logistic regression with R: R-bloggers. R. Retrieved November 5, 2021, from https://www.r-bloggers.com/2020/05/multinomial-logistic-regression-with-r/. 
+
+10. MULTINOMIAL LOGISTIC REGRESSION | STATA ANNOTATED OUTPUT. IDRE Stats. (n.d.). Retrieved November 5, 2021, from https://stats.idre.ucla.edu/stata/output/multinomial-logistic-regression-2/. 
+
+11. Subset distinct/unique rows - distinct. - distinct • dplyr. (n.d.). Retrieved November 5, 2021, from https://dplyr.tidyverse.org/reference/distinct.html. 
+
+12. Rpolicastro, &amp; Camillab. (n.d.). Basic barplot with ggplot: Assign specific color to column with specific values. Bioinformatics Answers. Retrieved November 5, 2021, from https://www.biostars.org/p/464531/. 
+
+13. Moffatt, M. (2019, April 10). Definition/use of Akiake Information Criterion (AIC) in Econometrics. ThoughtCo. Retrieved November 5, 2021, from https://www.thoughtco.com/introduction-to-akaikes-information-criterion-1145956. 
+
+14. Grover, K. (2020, June 23). Advantages and disadvantages of logistic regression. OpenGenus IQ: Computing Expertise &amp; Legacy. Retrieved November 5, 2021, from https://iq.opengenus.org/advantages-and-disadvantages-of-logistic-regression/. 
